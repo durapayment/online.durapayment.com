@@ -191,7 +191,13 @@ export const NIGERIAN_STATES = [
 
 // Which steps exist per business type
 export const STEPS_BY_TYPE: Record<BusinessType, string[]> = {
-  individual: ["Business Type", "Personal Info", "Documents", "Review"],
+  individual: [
+    "Business Type",
+    "Personal Info",
+    "Address",
+    "Documents",
+    "Review",
+  ],
   business_name: [
     "Business Type",
     "Business Info",

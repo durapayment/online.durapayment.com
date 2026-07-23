@@ -614,14 +614,16 @@ export function ComplianceWizard() {
         </div>
       )}
 
-      {/* ── Step 2: Address (business_name + LLC only) ── */}
-      {currentStep === 2 && businessType !== "individual" && (
+      {/* ── Step 2: Address (ALL business types) ── */}
+      {currentStep === 2 && (
         <div className="space-y-5">
           <p className="text-sm text-gray-500">
             Provide your{" "}
             {businessType === "limited_liability"
               ? "registered business"
-              : "personal"}{" "}
+              : businessType === "business_name"
+                ? "business"
+                : "residential"}{" "}
             address details.
           </p>
 
@@ -631,8 +633,7 @@ export function ComplianceWizard() {
                 Street Address
               </label>
               <input
-                disabled={isLocked}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-gray-400 outline-none text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-gray-400 outline-none text-sm"
                 placeholder="12 Adeola Odeku Street"
                 value={infoForm.business_address}
                 onChange={(e) =>
@@ -648,8 +649,7 @@ export function ComplianceWizard() {
                 City
               </label>
               <input
-                disabled={isLocked}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-gray-400 outline-none text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-gray-400 outline-none text-sm"
                 placeholder="Lagos"
                 value={infoForm.business_city}
                 onChange={(e) =>
@@ -662,14 +662,10 @@ export function ComplianceWizard() {
                 State
               </label>
               <select
-                disabled={isLocked}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-gray-400 outline-none text-sm bg-white disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-gray-400 outline-none text-sm bg-white"
                 value={infoForm.business_state}
                 onChange={(e) =>
-                  setInfoForm((f) => ({
-                    ...f,
-                    business_state: e.target.value,
-                  }))
+                  setInfoForm((f) => ({ ...f, business_state: e.target.value }))
                 }
               >
                 <option value="">Select state</option>
@@ -687,7 +683,6 @@ export function ComplianceWizard() {
             onNext={() => handleSaveInfo(true)}
             onSave={() => handleSaveInfo(false)}
             saving={saving}
-            disabled={isLocked}
             nextLabel="Save & Continue"
           />
         </div>
