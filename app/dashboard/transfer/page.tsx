@@ -497,17 +497,14 @@ function NewTransferModal({
     }
   };
 
-  // ── Confirm tapped → send 2FA OTP, move to otp step ──────────────────
+  // ── Confirm tapped → send OTP, move to otp step ──────────────────
   const sendOtp = async () => {
     setLoading(true);
     setApiError(null);
     try {
       const res = await fetch("/api/request/otp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+        method: "GET",
+        headers: { Accept: "application/json" },
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -529,12 +526,9 @@ function NewTransferModal({
   const resendOtp = async () => {
     setOtpError(null);
     try {
-      const res = await fetch("/api/auth/two-factor/resend", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+      const res = await fetch("/api/request/otp", {
+        method: "GET",
+        headers: { Accept: "application/json" },
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -547,6 +541,29 @@ function NewTransferModal({
       );
     }
   };
+
+  // ── Resend OTP ────────────────────────────────────────
+  // const resendOtp = async () => {
+  //   setOtpError(null);
+  //   try {
+  //     const res = await fetch("/api/auth/two-factor/resend", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Accept: "application/json",
+  //       },
+  //     });
+  //     if (!res.ok) {
+  //       const data = await res.json().catch(() => ({}));
+  //       throw new Error(data.message || "Failed to resend code");
+  //     }
+  //     startCooldown();
+  //   } catch (err: unknown) {
+  //     setOtpError(
+  //       err instanceof Error ? err.message : "Could not resend code.",
+  //     );
+  //   }
+  // };
 
   // ── OTP input handlers ────────────────────────────────
   const handleOtpChange = (index: number, value: string) => {
