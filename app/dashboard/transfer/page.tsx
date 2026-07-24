@@ -612,7 +612,7 @@ function NewTransferModal({
         // NOTE: confirm the field name your backend expects here —
         // using `code` to match the auth/two-factor/verify convention;
         // adjust to `otp` if AuthController::verifyTwoFactorAuth reads that instead.
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ otp: code }),
       });
       const verifyData = await verifyRes.json();
       if (!verifyRes.ok) {
