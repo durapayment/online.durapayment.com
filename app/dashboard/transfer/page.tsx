@@ -502,7 +502,7 @@ function NewTransferModal({
     setLoading(true);
     setApiError(null);
     try {
-      const res = await fetch("/api/auth/two-factor/resend", {
+      const res = await fetch("/api/request/otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
