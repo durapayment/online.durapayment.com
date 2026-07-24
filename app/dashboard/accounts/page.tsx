@@ -185,44 +185,35 @@ function BusinessAccountCard({
   // ── Not verified ───────────────────────────────────────
   if (!isVerified) {
     return (
-      <div className="flex flex-col items-center justify-center py-10 px-6 border-2 border-dashed border-gray-200 rounded-3xl text-center bg-gray-50">
-        <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center mb-3">
-          <RiShieldCheckLine size={24} className="text-amber-600" />
+      <div className="flex flex-col items-center justify-center py-12 px-6 border border-gray-200 rounded-2xl text-center">
+        <div className="w-11 h-11 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+          <RiShieldCheckLine size={20} className="text-gray-500" />
         </div>
-        <h3 className="font-bold text-gray-900 mb-1">
-          Account Not Assigned Yet
+        <h3 className="font-medium text-gray-900 mb-1">
+          Account not assigned yet
         </h3>
-        <p className="text-sm text-gray-500 max-w-sm leading-relaxed mb-4">
-          Your dedicated bank account will be automatically assigned once your
-          business KYC verification is approved.
+        <p className="text-sm text-gray-500 max-w-sm leading-relaxed mb-5">
+          Your dedicated bank account will be assigned once your business
+          verification is approved.
         </p>
-        <div
-          className={clsx(
-            "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border",
-            verificationStatus === "under_review"
-              ? "bg-blue-50 border-blue-200 text-blue-700"
-              : verificationStatus === "rejected"
-                ? "bg-red-50 border-red-200 text-red-700"
-                : "bg-amber-50 border-amber-200 text-amber-700",
-          )}
-        >
+        <div className="inline-flex items-center gap-1.5 text-sm text-gray-600 mb-1">
           {verificationStatus === "under_review" ? (
-            <RiTimeLine size={14} />
+            <RiTimeLine size={15} />
           ) : (
-            <RiAlertLine size={14} />
+            <RiAlertLine size={15} />
           )}
           {verificationStatus === "under_review"
-            ? "KYC Under Review"
+            ? "Verification under review"
             : verificationStatus === "rejected"
-              ? "KYC Rejected — Please Resubmit"
-              : "KYC Verification Required"}
+              ? "Verification rejected — resubmit to continue"
+              : "Verification required"}
         </div>
         {verificationStatus !== "under_review" && (
           <a
             href="/dashboard/settings?completeVerification=true"
-            className="mt-3 px-5 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors"
+            className="mt-4 px-5 py-2 rounded-full bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors"
           >
-            Complete Verification
+            Complete verification
           </a>
         )}
       </div>
@@ -232,14 +223,13 @@ function BusinessAccountCard({
   // ── Verified but no account yet ────────────────────────
   if (!account) {
     return (
-      <div className="flex flex-col items-center justify-center py-10 px-6 border-2 border-dashed border-gray-200 rounded-3xl text-center bg-gray-50">
-        <div className="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center mb-3">
-          <RiTimeLine size={24} className="text-blue-600" />
+      <div className="flex flex-col items-center justify-center py-12 px-6 border border-gray-200 rounded-2xl text-center">
+        <div className="w-11 h-11 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+          <RiTimeLine size={20} className="text-gray-500" />
         </div>
-        <h3 className="font-bold text-gray-900 mb-1">Account Being Set Up</h3>
+        <h3 className="font-medium text-gray-900 mb-1">Account being set up</h3>
         <p className="text-sm text-gray-500 max-w-sm leading-relaxed">
-          Your business is verified. Your dedicated bank account is being set up
-          and will appear here shortly.
+          Your business is verified. Your account will appear here shortly.
         </p>
       </div>
     );
@@ -247,118 +237,75 @@ function BusinessAccountCard({
 
   // ── Account card ───────────────────────────────────────
   return (
-    <div className="rounded-3xl border border-gray-200 bg-white overflow-hidden shadow-sm">
-      {/* Card header */}
-      <div className="px-6 py-4 bg-gray-900 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
-            <RiBankLine size={18} className="text-white" />
-          </div>
-          <div>
-            <p className="text-white font-semibold text-sm">
-              {account.bank_name}
-            </p>
-            <p className="text-white/60 text-[11px]">Your Business Account</p>
-          </div>
+    <div className="rounded-2xl border border-gray-200 bg-white p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2.5">
+          <RiBankLine size={18} className="text-gray-400" />
+          <p className="text-sm font-medium text-gray-900">
+            {account.bank_name}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/10 text-white/80">
-            Tier {account.tier}
-          </span>
-          <span
-            className={clsx(
-              "text-[11px] font-semibold px-2.5 py-1 rounded-full",
-              account.status === "active"
-                ? "bg-green-500/20 text-green-300"
-                : "bg-red-500/20 text-red-300",
-            )}
-          >
-            {account.status === "active" ? "Active" : account.status}
-          </span>
-        </div>
+        <span
+          className={clsx(
+            "text-xs font-medium px-2 py-0.5 rounded-full",
+            account.status === "active"
+              ? "text-green-700 bg-green-50"
+              : "text-red-700 bg-red-50",
+          )}
+        >
+          {account.status === "active" ? "Active" : account.status}
+        </span>
       </div>
 
-      {/* Account details */}
-      <div className="divide-y divide-gray-100">
-        {/* Account number */}
-        <div className="flex items-center justify-between px-6 py-4">
-          <div>
-            <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-0.5">
-              Account Number
-            </p>
-            <p className="text-2xl font-bold text-gray-900 tracking-widest font-mono">
-              {account.account_number}
-            </p>
-          </div>
-          <CopyButton value={account.account_number} label="account number" />
-        </div>
+      {/* Account number — the hero */}
+      <div className="flex items-center justify-between mb-6">
+        <p className="text-2xl font-semibold text-gray-900 tracking-wide font-mono">
+          {account.account_number}
+        </p>
+        <CopyButton value={account.account_number} label="account number" />
+      </div>
 
-        {/* Account name */}
-        <div className="flex items-center justify-between px-6 py-4">
-          <div>
-            <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-0.5">
-              Account Name
-            </p>
-            <p className="text-base font-semibold text-gray-900">
-              {account.account_name}
-            </p>
+      {/* Details */}
+      <div className="space-y-3 text-sm mb-6">
+        <div className="flex items-center justify-between">
+          <span className="text-gray-500">Account name</span>
+          <div className="flex items-center gap-2">
+            <span className="text-gray-900">{account.account_name}</span>
+            <CopyButton value={account.account_name} label="account name" />
           </div>
-          <CopyButton value={account.account_name} label="account name" />
         </div>
-
-        {/* Bank name */}
-        <div className="flex items-center justify-between px-6 py-4">
-          <div>
-            <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-0.5">
-              Bank Name
-            </p>
-            <p className="text-base font-semibold text-gray-900">
-              {account.bank_name}
-            </p>
-          </div>
-          <CopyButton value={account.bank_name} label="bank name" />
+        <div className="flex items-center justify-between">
+          <span className="text-gray-500">Daily limit</span>
+          <span className="text-gray-900">
+            {formatCurrency(account.daily_limit)}
+          </span>
         </div>
-
-        {/* Limits */}
-        <div className="grid grid-cols-2 divide-x divide-gray-100">
-          <div className="px-6 py-4">
-            <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-0.5">
-              Daily Limit
-            </p>
-            <p className="text-sm font-semibold text-gray-900">
-              {formatCurrency(account.daily_limit)}
-            </p>
-          </div>
-          <div className="px-6 py-4">
-            <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-0.5">
-              Max Per Transaction
-            </p>
-            <p className="text-sm font-semibold text-gray-900">
-              {formatCurrency(account.max_transaction_limit)}
-            </p>
-          </div>
+        <div className="flex items-center justify-between">
+          <span className="text-gray-500">Max per transaction</span>
+          <span className="text-gray-900">
+            {formatCurrency(account.max_transaction_limit)}
+          </span>
         </div>
       </div>
 
       {/* Copy all */}
-      <div className="px-6 py-4 border-t border-gray-100">
-        <button
-          onClick={handleCopyAll}
-          className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
-        >
-          {copiedAll ? (
-            <>
-              <RiCheckLine size={15} className="text-green-500" />
-              <span className="text-green-600">Copied!</span>
-            </>
-          ) : (
-            <>
-              <RiFileCopyLine size={15} />
-              Copy All Account Details
-            </>
-          )}
-        </button>
-      </div>
+      <button
+        onClick={handleCopyAll}
+        className="w-full py-2 rounded-full border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+      >
+        {copiedAll ? (
+          <>
+            <RiCheckLine size={14} className="text-green-500" />
+            <span className="text-green-600">Copied</span>
+          </>
+        ) : (
+          <>
+            <RiFileCopyLine size={14} />
+            Copy all details
+          </>
+        )}
+      </button>
     </div>
   );
 }

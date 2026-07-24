@@ -72,6 +72,16 @@ interface Bank {
   name: string;
 }
 
+interface AccountEnquiry {
+  account_id: string;
+  client_id: string;
+  vfd_balance: number;
+  wallet_balance: number;
+  amount: number;
+  fee: number;
+  total_debit: number;
+}
+
 // ─────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────
@@ -332,7 +342,7 @@ function NewTransferModal({
   onClose: () => void;
   onSuccess: () => void;
 }) {
-  const [step, setStep] = useState<"form" | "otp" | "confirm" | "success">(
+  const [step, setStep] = useState<"form" | "confirm" | "otp" | "success">(
     "form",
   );
   const [banks, setBanks] = useState<Bank[]>([]);
@@ -344,6 +354,7 @@ function NewTransferModal({
   const [otpError, setOtpError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [showBankPicker, setShowBankPicker] = useState(false);
+  const [enquiry, setEnquiry] = useState<AccountEnquiry | null>(null);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -368,7 +379,7 @@ function NewTransferModal({
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/payments/banks");
+        const res = await fetch("/api/banks");
         if (res.ok) {
           const data = await res.json();
           setBanks(data.data ?? []);
@@ -399,7 +410,8 @@ function NewTransferModal({
           setForm((f) => ({ ...f, account_name: "" }));
           setErrors((e) => ({
             ...e,
-            account_name: "Could not resolve account. Check the number.",
+            account_name:
+              data.message || "Could not resolve account. Check the number.",
           }));
         }
       } catch {
@@ -453,33 +465,61 @@ function NewTransferModal({
     return Object.values(e).every((v) => !v);
   };
 
-  // ── Continue → send OTP then show OTP step ────────────
-  const proceedToOtp = async () => {
+  // ── Continue → account enquiry (checks VFD balance) → confirm step ──
+  const proceedToConfirm = async () => {
     if (!validate()) return;
     setLoading(true);
+    setApiError(null);
     try {
-      const res = await fetch("/api/request/otp", {
-        method: "GET",
+      const res = await fetch("/api/transactions/account-enquiry", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ amount: parseFloat(form.amount) }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        // 422 comes back with a balance breakdown even on failure
+        throw new Error(data.message || "Could not verify account balance");
+      }
+      setEnquiry(data.data);
+      setStep("confirm");
+    } catch (err: unknown) {
+      setErrors((e) => ({
+        ...e,
+        amount:
+          err instanceof Error ? err.message : "Could not verify balance.",
+      }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Confirm tapped → send 2FA OTP, move to otp step ──────────────────
+  const sendOtp = async () => {
+    setLoading(true);
+    setApiError(null);
+    try {
+      const res = await fetch("/api/auth/two-factor/resend", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
       });
-
-      if (!res.ok) throw new Error("Failed to send OTP");
-
-      const data = await res.json();
-
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || "Failed to send verification code");
+      }
       setOtp(["", "", "", "", "", ""]);
       setOtpError(null);
       setStep("otp");
       startCooldown();
       setTimeout(() => otpRefs.current[0]?.focus(), 100);
     } catch (err: unknown) {
-      setErrors((e) => ({
-        ...e,
-        amount: err instanceof Error ? err.message : "Could not send OTP.",
-      }));
+      setApiError(err instanceof Error ? err.message : "Could not send code.");
     } finally {
       setLoading(false);
     }
@@ -489,20 +529,22 @@ function NewTransferModal({
   const resendOtp = async () => {
     setOtpError(null);
     try {
-      const res = await fetch("/api/request/otp", {
-        method: "GET",
+      const res = await fetch("/api/auth/two-factor/resend", {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
       });
-
-      if (!res.ok) throw new Error("Failed to send OTP");
-      const data = await res.json();
-
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || "Failed to resend code");
+      }
       startCooldown();
     } catch (err: unknown) {
-      setOtpError(err instanceof Error ? err.message : "Could not resend OTP.");
+      setOtpError(
+        err instanceof Error ? err.message : "Could not resend code.",
+      );
     }
   };
 
@@ -537,43 +579,47 @@ function NewTransferModal({
     }
   };
 
-  // ── Verify OTP → move to confirm ─────────────────────
+  // ── Verify OTP → submit transfer directly ─────────────
   const verifyOtp = async () => {
     const code = otp.join("");
     if (code.length < 6) {
-      setOtpError("Please enter the full 6-digit OTP.");
+      setOtpError("Please enter the full 6-digit code.");
       return;
     }
     setLoading(true);
     setOtpError(null);
     try {
-      const res = await fetch("/api/payments/transfer/verify-otp", {
+      const verifyRes = await fetch("/api/auth/two-factor/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otp: code }),
+        // NOTE: confirm the field name your backend expects here —
+        // using `code` to match the auth/two-factor/verify convention;
+        // adjust to `otp` if AuthController::verifyTwoFactorAuth reads that instead.
+        body: JSON.stringify({ code }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Invalid OTP");
-      setStep("confirm");
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok) {
+        throw new Error(verifyData.message || "Invalid verification code");
+      }
+
+      // 2FA passed — now actually submit the transfer
+      await handleSubmit();
     } catch (err: unknown) {
-      setOtpError(
-        err instanceof Error ? err.message : "OTP verification failed.",
-      );
-    } finally {
+      setOtpError(err instanceof Error ? err.message : "Verification failed.");
       setLoading(false);
     }
   };
 
   // ── Submit transfer ───────────────────────────────────
   const handleSubmit = async () => {
-    setLoading(true);
     setApiError(null);
     try {
-      const res = await fetch("/api/payments/transfer", {
+      const res = await fetch("/api/transactions/transfer", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
+          "Idempotency-Key": crypto.randomUUID(),
         },
         body: JSON.stringify({
           bank_code: form.bank_code,
@@ -587,7 +633,10 @@ function NewTransferModal({
       if (!res.ok) throw new Error(data.message || "Transfer failed");
       setStep("success");
     } catch (err: unknown) {
-      setApiError(err instanceof Error ? err.message : "Something went wrong");
+      const message =
+        err instanceof Error ? err.message : "Something went wrong";
+      setApiError(message);
+      setOtpError(message);
       setStep("confirm");
     } finally {
       setLoading(false);
@@ -799,14 +848,14 @@ function NewTransferModal({
                 Cancel
               </button>
               <button
-                onClick={proceedToOtp}
+                onClick={proceedToConfirm}
                 disabled={!form.account_name || resolving || loading}
                 className="flex-1 py-2.5 rounded-xl bg-accent cursor-pointer text-white text-sm font-semibold hover:bg-tertiary transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
                     <RiRefreshLine size={14} className="animate-spin" />
-                    Sending OTP…
+                    Checking balance…
                   </>
                 ) : (
                   "Continue"
@@ -816,7 +865,100 @@ function NewTransferModal({
           </>
         )}
 
-        {/* ── OTP ── */}
+        {/* ── CONFIRM ── */}
+        {step === "confirm" && (
+          <>
+            <div className="px-5 py-6 space-y-4">
+              <div className="text-center py-4 bg-gray-50 rounded-2xl">
+                <p className="text-xs text-gray-500 mb-1">You are sending</p>
+                <p className="text-4xl font-bold text-gray-900">
+                  {fmt(parseFloat(form.amount || "0"))}
+                </p>
+                {enquiry && enquiry.fee > 0 && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    + {fmt(enquiry.fee)} fee · {fmt(enquiry.total_debit)} total
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-3 bg-gray-50 rounded-xl p-4">
+                {[
+                  {
+                    label: "Bank",
+                    value: selectedBank?.name ?? form.bank_code,
+                  },
+                  {
+                    label: "Account Number",
+                    value: form.account_number,
+                    mono: true,
+                  },
+                  { label: "Account Name", value: form.account_name },
+                  { label: "Narration", value: form.narration || "Transfer" },
+                  ...(enquiry
+                    ? [
+                        { label: "Transfer Fee", value: fmt(enquiry.fee) },
+                        {
+                          label: "Total Debit",
+                          value: fmt(enquiry.total_debit),
+                        },
+                      ]
+                    : []),
+                ].map(({ label, value, mono }) => (
+                  <div
+                    key={label}
+                    className="flex justify-between items-center gap-4"
+                  >
+                    <span className="text-sm text-gray-500">{label}</span>
+                    <span
+                      className={`text-sm font-medium text-gray-900 text-right ${mono ? "font-mono" : ""}`}
+                    >
+                      {value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {apiError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+                  {apiError}
+                </div>
+              )}
+
+              <p className="text-xs text-gray-400 flex items-start gap-1.5">
+                <RiInformationLine size={14} className="shrink-0 mt-0.5" />
+                You&apos;ll be asked to verify with a code sent to your
+                registered email before this transfer is sent. Transfers are
+                processed within 30 minutes during banking hours and cannot be
+                undone.
+              </p>
+            </div>
+
+            <div className="px-5 pb-5 flex gap-2">
+              <button
+                onClick={() => setStep("form")}
+                className="flex-1 py-2.5 rounded-xl border cursor-pointer border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Back
+              </button>
+              <button
+                onClick={sendOtp}
+                disabled={loading}
+                className="flex-1 py-2.5 rounded-xl bg-accent text-white text-sm font-semibold hover:bg-tertiary cursor-pointer disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <RiRefreshLine size={14} className="animate-spin" />
+                    Sending code…
+                  </>
+                ) : (
+                  "Confirm Transfer"
+                )}
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* ── OTP (2FA) ── */}
         {step === "otp" && (
           <>
             <div className="px-5 py-6 space-y-5">
@@ -846,7 +988,7 @@ function NewTransferModal({
                   Enter verification code
                 </p>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  A 6-digit OTP has been sent to your registered email address.
+                  A 6-digit code has been sent to your registered email address.
                 </p>
               </div>
 
@@ -903,7 +1045,7 @@ function NewTransferModal({
             <div className="px-5 pb-5 flex gap-2">
               <button
                 onClick={() => {
-                  setStep("form");
+                  setStep("confirm");
                   setOtp(["", "", "", "", "", ""]);
                   setOtpError(null);
                 }}
@@ -922,84 +1064,7 @@ function NewTransferModal({
                     Verifying…
                   </>
                 ) : (
-                  "Verify & Continue"
-                )}
-              </button>
-            </div>
-          </>
-        )}
-
-        {/* ── CONFIRM ── */}
-        {step === "confirm" && (
-          <>
-            <div className="px-5 py-6 space-y-4">
-              <div className="text-center py-4 bg-gray-50 rounded-2xl">
-                <p className="text-xs text-gray-500 mb-1">You are sending</p>
-                <p className="text-4xl font-bold text-gray-900">
-                  {fmt(parseFloat(form.amount || "0"))}
-                </p>
-              </div>
-
-              <div className="space-y-3 bg-gray-50 rounded-xl p-4">
-                {[
-                  {
-                    label: "Bank",
-                    value: selectedBank?.name ?? form.bank_code,
-                  },
-                  {
-                    label: "Account Number",
-                    value: form.account_number,
-                    mono: true,
-                  },
-                  { label: "Account Name", value: form.account_name },
-                  { label: "Narration", value: form.narration || "Transfer" },
-                ].map(({ label, value, mono }) => (
-                  <div
-                    key={label}
-                    className="flex justify-between items-center gap-4"
-                  >
-                    <span className="text-sm text-gray-500">{label}</span>
-                    <span
-                      className={`text-sm font-medium text-gray-900 text-right ${mono ? "font-mono" : ""}`}
-                    >
-                      {value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {apiError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-                  {apiError}
-                </div>
-              )}
-
-              <p className="text-xs text-gray-400 flex items-start gap-1.5">
-                <RiInformationLine size={14} className="shrink-0 mt-0.5" />
-                Transfers are processed within 30 minutes during banking hours.
-                This action cannot be undone.
-              </p>
-            </div>
-
-            <div className="px-5 pb-5 flex gap-2">
-              <button
-                onClick={() => setStep("otp")}
-                className="flex-1 py-2.5 rounded-xl border cursor-pointer border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-              >
-                Back
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="flex-1 py-2.5 rounded-xl bg-accent text-white text-sm font-semibold hover:bg-tertiary cursor-pointer disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <RiRefreshLine size={14} className="animate-spin" />
-                    Processing…
-                  </>
-                ) : (
-                  "Confirm Transfer"
+                  "Verify & Send"
                 )}
               </button>
             </div>
@@ -1111,7 +1176,7 @@ export default function PaymentsPage() {
       if (debouncedSearch) params.set("search", debouncedSearch);
       if (statusFilter !== "all") params.set("status", statusFilter);
 
-      const res = await fetch(`/api/payments/transfers?${params}`, {
+      const res = await fetch(`/api/transactions?${params}`, {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
