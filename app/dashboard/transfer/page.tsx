@@ -627,16 +627,15 @@ function NewTransferModal({
     }
   };
 
-  // ── Submit transfer ───────────────────────────────────
+  // ── Submit transfer ── //
   const handleSubmit = async () => {
     setApiError(null);
     try {
-      const res = await fetch("/api/transactions/transfer", {
+      const res = await fetch("/api/payments/transfer", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "Idempotency-Key": crypto.randomUUID(),
         },
         body: JSON.stringify({
           bank_code: form.bank_code,
