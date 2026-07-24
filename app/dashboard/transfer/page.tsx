@@ -606,7 +606,7 @@ function NewTransferModal({
     setLoading(true);
     setOtpError(null);
     try {
-      const verifyRes = await fetch("/api/auth/two-factor/verify", {
+      const verifyRes = await fetch("/api/payments/transfer/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // NOTE: confirm the field name your backend expects here —
