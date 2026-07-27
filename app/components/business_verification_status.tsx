@@ -3,6 +3,7 @@ import {
   RiShieldLine,
   RiShieldStarLine,
   RiShieldCheckLine,
+  RiForbid2Line,
 } from "react-icons/ri";
 
 const statusConfig = {
@@ -48,6 +49,28 @@ const statusConfig = {
     iconClass: "bg-green-50 text-green-600",
     titleClass: "text-green-800",
     pillClass: "bg-green-50 text-green-800 border border-green-200",
+    btnClass: "",
+  },
+  rejected: {
+    Icon: <RiShieldCrossLine size={20} />,
+    title: "Verification rejected",
+    pill: "Rejected",
+    desc: "Your verification submission was rejected. Review the reason and resubmit your details.",
+    cta: true,
+    iconClass: "bg-red-50 text-red-500",
+    titleClass: "text-red-800",
+    pillClass: "bg-red-50 text-red-800 border border-red-200",
+    btnClass: "text-red-800 border-red-200 hover:bg-red-50",
+  },
+  suspended: {
+    Icon: <RiForbid2Line size={20} />,
+    title: "Business suspended",
+    pill: "Suspended",
+    desc: "Your business has been suspended. Contact support for more information.",
+    cta: false,
+    iconClass: "bg-gray-100 text-gray-500",
+    titleClass: "text-gray-800",
+    pillClass: "bg-gray-100 text-gray-700 border border-gray-200",
     btnClass: "",
   },
 } as const;
