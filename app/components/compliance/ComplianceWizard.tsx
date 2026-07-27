@@ -75,6 +75,7 @@ export function ComplianceWizard() {
     business_type: "" as BusinessType | "",
     business_industry: "",
     registration_number: "",
+    incorporation_date: "",
     bvn: "",
     nin: "",
     date_of_birth: "",
@@ -96,6 +97,7 @@ export function ComplianceWizard() {
         business_type: d.business_type ?? "",
         business_industry: d.business_industry ?? "",
         registration_number: d.registration_number ?? "",
+        incorporation_date: d.incorporation_date ?? "",
         bvn: d.bvn ?? "",
         nin: d.nin ?? "",
         date_of_birth: d.date_of_birth ?? "",
@@ -445,29 +447,50 @@ export function ComplianceWizard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Registration number — not for individual */}
             {businessType !== "individual" && (
-              <div className="sm:col-span-2">
-                <label className="block text-[12px] font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
-                  {businessType === "business_name"
-                    ? "Business Name Number (BN)"
-                    : "RC Number"}
-                </label>
-                <input
-                  disabled={isLocked}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-gray-400 outline-none text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                  placeholder={
-                    businessType === "business_name"
-                      ? "BN-1234567"
-                      : "RC-1234567"
-                  }
-                  value={infoForm.registration_number}
-                  onChange={(e) =>
-                    setInfoForm((f) => ({
-                      ...f,
-                      registration_number: e.target.value,
-                    }))
-                  }
-                />
-              </div>
+              <>
+                <div className="sm:col-span-2">
+                  <label className="block text-[12px] font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
+                    {businessType === "business_name"
+                      ? "Business Name Number (BN)"
+                      : "RC Number"}
+                  </label>
+                  <input
+                    disabled={isLocked}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-gray-400 outline-none text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                    placeholder={
+                      businessType === "business_name"
+                        ? "BN-1234567"
+                        : "RC-1234567"
+                    }
+                    value={infoForm.registration_number}
+                    onChange={(e) =>
+                      setInfoForm((f) => ({
+                        ...f,
+                        registration_number: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-[12px] font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
+                    Incorporation Date
+                  </label>
+                  <input
+                    type="date"
+                    disabled={isLocked}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-gray-400 outline-none text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                    max={new Date().toISOString().split("T")[0]}
+                    value={infoForm.incorporation_date}
+                    onChange={(e) =>
+                      setInfoForm((f) => ({
+                        ...f,
+                        incorporation_date: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </>
             )}
 
             {/* Industry */}
@@ -975,6 +998,10 @@ export function ComplianceWizard() {
                 {
                   label: "Registration Number",
                   value: data.registration_number ?? "N/A",
+                },
+                {
+                  label: "Incorporation Date",
+                  value: data.incorporation_date ?? "N/A",
                 },
                 {
                   label: "BVN",

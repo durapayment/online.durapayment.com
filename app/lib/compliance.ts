@@ -90,6 +90,7 @@ export interface ComplianceData {
   website: string | null;
   business_address: string | null;
   business_city: string | null;
+  incorporation_date: string | null;
   business_state: string | null;
   business_country: string | null;
   verification_status: VerificationStatus;
