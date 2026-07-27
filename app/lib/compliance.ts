@@ -85,12 +85,16 @@ export interface ComplianceProgress {
 export interface ComplianceData {
   business_type: BusinessType | null;
   business_industry: string | null;
+  business_description: string | null;
+  monthly_transaction_volume: string | null;
   registration_number: string | null;
+  incorporation_date: string | null;
   bvn: string | null;
+  nin: string | null;
+  date_of_birth: string | null;
   website: string | null;
   business_address: string | null;
   business_city: string | null;
-  incorporation_date: string | null;
   business_state: string | null;
   business_country: string | null;
   verification_status: VerificationStatus;
@@ -102,7 +106,6 @@ export interface ComplianceData {
   directors: Director[];
   required_document_types: string[];
 }
-
 // ─────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────
@@ -140,6 +143,20 @@ export const BUSINESS_INDUSTRIES = [
   "Media & Entertainment",
   "Travel & Hospitality",
   "Manufacturing",
+  "Retail",
+  "Food & Beverage",
+  "Fashion & Apparel",
+  "Beauty & Personal Care",
+  "Construction",
+  "Professional Services",
+  "Legal Services",
+  "Consulting",
+  "Telecommunications",
+  "Energy & Utilities",
+  "Automotive",
+  "Insurance",
+  "Non-Profit / NGO",
+  "Sports & Recreation",
   "Other",
 ];
 
@@ -148,6 +165,16 @@ export const DIRECTOR_ROLES: { value: DirectorRole; label: string }[] = [
   { value: "shareholder", label: "Shareholder" },
   { value: "beneficial_owner", label: "Beneficial Owner" },
   { value: "secretary", label: "Company Secretary" },
+];
+
+export const MONTHLY_VOLUME_RANGES = [
+  { value: "0-100000", label: "Under ₦100,000" },
+  { value: "100000-1000000", label: "₦100,000 – ₦1,000,000" },
+  { value: "1000000-5000000", label: "₦1,000,000 – ₦5,000,000" },
+  { value: "5000000-10000000", label: "₦5,000,000 – ₦10,000,000" },
+  { value: "10000000-50000000", label: "₦10,000,000 – ₦50,000,000" },
+  { value: "50000000-100000000", label: "₦50,000,000 – ₦100,000,000" },
+  { value: "100000000+", label: "₦100,000,000+" },
 ];
 
 export const NIGERIAN_STATES = [

@@ -24,6 +24,7 @@ import {
   NIGERIAN_STATES,
   STEPS_BY_TYPE,
   Director,
+  MONTHLY_VOLUME_RANGES,
 } from "@/app/lib/compliance";
 
 import {
@@ -74,6 +75,8 @@ export function ComplianceWizard() {
   const [infoForm, setInfoForm] = useState({
     business_type: "" as BusinessType | "",
     business_industry: "",
+    business_description: "",
+    monthly_transaction_volume: "",
     registration_number: "",
     incorporation_date: "",
     bvn: "",
@@ -96,6 +99,8 @@ export function ComplianceWizard() {
       setInfoForm({
         business_type: d.business_type ?? "",
         business_industry: d.business_industry ?? "",
+        business_description: d.business_description ?? "",
+        monthly_transaction_volume: d.monthly_transaction_volume ?? "",
         registration_number: d.registration_number ?? "",
         incorporation_date: d.incorporation_date ?? "",
         bvn: d.bvn ?? "",
@@ -516,6 +521,55 @@ export function ComplianceWizard() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Monthly Transaction Volume */}
+            <div>
+              <label className="block text-[12px] font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
+                Monthly Transaction Volume *
+              </label>
+              <select
+                disabled={isLocked}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-gray-400 outline-none text-sm bg-white disabled:opacity-60 disabled:cursor-not-allowed"
+                value={infoForm.monthly_transaction_volume}
+                onChange={(e) =>
+                  setInfoForm((f) => ({
+                    ...f,
+                    monthly_transaction_volume: e.target.value,
+                  }))
+                }
+              >
+                <option value="">Select expected volume</option>
+                {MONTHLY_VOLUME_RANGES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Business Description */}
+            <div className="sm:col-span-2">
+              <label className="block text-[12px] font-semibold uppercase tracking-wide text-gray-500 mb-1.5">
+                Business Description *
+              </label>
+              <textarea
+                disabled={isLocked}
+                rows={3}
+                maxLength={1000}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-gray-400 outline-none text-sm disabled:opacity-60 disabled:cursor-not-allowed resize-none"
+                placeholder="Briefly describe what your business does, the products or services you offer, and who your customers are."
+                value={infoForm.business_description}
+                onChange={(e) =>
+                  setInfoForm((f) => ({
+                    ...f,
+                    business_description: e.target.value,
+                  }))
+                }
+              />
+              <p className="text-[11px] text-gray-400 mt-1 text-right">
+                {infoForm.business_description.length}/1000
+              </p>
             </div>
 
             {/* BVN */}
@@ -996,6 +1050,15 @@ export function ComplianceWizard() {
                   value: data.business_industry,
                 },
                 {
+                  label: "Monthly Volume",
+                  value:
+                    MONTHLY_VOLUME_RANGES.find(
+                      (r) => r.value === data.monthly_transaction_volume,
+                    )?.label ??
+                    data.monthly_transaction_volume ??
+                    "N/A",
+                },
+                {
                   label: "Registration Number",
                   value: data.registration_number ?? "N/A",
                 },
@@ -1032,6 +1095,16 @@ export function ComplianceWizard() {
                 </div>
               ))}
             </div>
+            {data.business_description && (
+              <div className="px-5 pb-4">
+                <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-0.5">
+                  Business Description
+                </p>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  {data.business_description}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Documents Summary */}
