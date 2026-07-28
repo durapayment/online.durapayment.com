@@ -1,6 +1,6 @@
 import { Table } from "@heroui/react";
 
-interface typesForTransaction {
+interface TransactionRow {
   email: string;
   amount: string;
   status: string;
@@ -10,7 +10,7 @@ interface typesForTransaction {
 export const TransactionTable = ({
   transactions,
 }: {
-  transactions: typesForTransaction[];
+  transactions: TransactionRow[];
 }) => {
   return (
     <Table variant="secondary">
@@ -23,9 +23,9 @@ export const TransactionTable = ({
             <Table.Column>Transaction ID</Table.Column>
           </Table.Header>
           <Table.Body>
-            {transactions.map((tx: any) => (
+            {transactions.map((tx) => (
               <Table.Row key={tx.transactionId}>
-                <Table.Cell>{tx.email}</Table.Cell>
+                <Table.Cell>{tx.email || "—"}</Table.Cell>
                 <Table.Cell>{tx.amount}</Table.Cell>
                 <Table.Cell
                   className={`${tx.status === "Completed" ? "text-green-600" : tx.status === "Pending" ? "text-warning" : "text-danger"} `}
