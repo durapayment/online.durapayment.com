@@ -100,6 +100,11 @@ function Step2({ accountType, step1Data, onBack }: Step2Props) {
     confirmPassword: "",
   });
 
+  // ── General (non-field-specific) error — for server/backend
+  //    failures that aren't Laravel validation errors and shouldn't
+  //    be blamed on any one input field. ─────────────────────────
+  const [generalError, setGeneralError] = useState<string | null>(null);
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -158,6 +163,8 @@ function Step2({ accountType, step1Data, onBack }: Step2Props) {
   const strength = getPasswordStrength(formData.password);
 
   const handleSubmit = async () => {
+    setGeneralError(null);
+
     const newErrors = {} as Step2Errors;
     let hasError = false;
 
@@ -206,6 +213,8 @@ function Step2({ accountType, step1Data, onBack }: Step2Props) {
 
       if (!response.ok) {
         if (result.errors) {
+          // ── Structured Laravel validation errors — map to the
+          //    specific field they actually belong to. ───────────
           const apiErrors: Partial<Step2Errors> = {};
           for (const key in result.errors) {
             if (key === "first_name")
@@ -217,12 +226,14 @@ function Step2({ accountType, step1Data, onBack }: Step2Props) {
             else if (key === "password")
               apiErrors.password = result.errors[key][0];
           }
-          // setErrors(apiErrors);
+          setErrors((prev) => ({ ...prev, ...apiErrors }));
         } else {
-          setErrors((prev) => ({
-            ...prev,
-            phone: result.message || "Registration failed. Please try again.",
-          }));
+          // ── Not a field-level validation error (e.g. a raw server
+          //    error) — show it generically instead of guessing
+          //    which input to blame. ───────────────────────────────
+          setGeneralError(
+            result.message || "Registration failed. Please try again.",
+          );
         }
         return;
       }
@@ -230,10 +241,7 @@ function Step2({ accountType, step1Data, onBack }: Step2Props) {
       setSuccess(true);
       router.push("/dashboard");
     } catch {
-      setErrors((prev) => ({
-        ...prev,
-        phone: "Something went wrong. Please try again.",
-      }));
+      setGeneralError("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -253,6 +261,12 @@ function Step2({ accountType, step1Data, onBack }: Step2Props) {
       {success && (
         <div className="rounded-md bg-green-50 border border-green-300 px-4 py-3 text-sm text-green-800">
           Account created successfully! Redirecting you to your dashboard...
+        </div>
+      )}
+
+      {generalError && (
+        <div className="rounded-md bg-red-50 border border-red-300 px-4 py-3 text-sm text-red-700">
+          {generalError}
         </div>
       )}
 
