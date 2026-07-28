@@ -5,6 +5,8 @@ import {
   RiArrowUpLongLine,
   RiCalendar2Line,
   RiRefreshLine,
+  RiWallet3Line,
+  RiTimeLine,
 } from "react-icons/ri";
 import SalesPerformance from "../components/chart";
 import TrafficSource from "../components/dashboard/trafic-source";
@@ -15,6 +17,19 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { User, authService } from "../lib/auth";
 import { BusinessVerificationStatus } from "../components/business_verification_status";
+
+// ─────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────
+function fmt(amount: number | string | null | undefined): string {
+  if (amount === null || amount === undefined || amount === "") return "0.00";
+  const num = typeof amount === "string" ? parseFloat(amount) : amount;
+  if (isNaN(num)) return "0.00";
+  return num.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -32,7 +47,6 @@ export default function DashboardPage() {
         setUser(user);
         setBusiness(business);
         setSummary(summary);
-        console.log(summary?.recent_customers);
       }
     } catch (error) {
       console.error("Failed to fetch user:", error);
@@ -81,31 +95,41 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* Transaction Date */}
-        {/* <div className="flex w-full items-center justify-between">
-          <div className="flex mt-4 w-max items-center gap-3">
-            <div className="h-9 px-4 gap-3 rounded-full flex items-center justify-center bg-dashboard-hover">
-              <RiCalendar2Line className="" color="" />
-              <p className="">Monthy</p>
-              <RiArrowDownSLine className="" color="" />
-            </div>
-            <div
-              role="presentation"
-              onClick={refreshPage}
-              className="h-9 w-9 cursor-pointer rounded-full flex items-center justify-center bg-dashboard-hover"
-            >
-              <RiRefreshLine />
+        {/* Totals */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 grid-rows-1 gap-3">
+          {/* Wallet Balance */}
+          <div className="bg-field-background h-21 rounded-lg p-2 xl:p-3 leading-5 text-[14px] shadow-sm flex flex-col justify-between">
+            <p className="opacity-75 flex items-center gap-1.5">
+              <RiWallet3Line size={13} />
+              Wallet Balance
+            </p>
+            <div className="flex items-center justify-between">
+              <p className="leading-8 text-[22px] lg:text-[22px] xl:text-[24px] font-semibold">
+                ₦{fmt(business?.account_balance)}
+              </p>
             </div>
           </div>
-        </div> */}
 
-        {/* Totals */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 grid-rows-1 gap-3 ">
+          {/* Ledger Balance */}
+          <div className="bg-field-background h-21 rounded-lg p-2 xl:p-3 leading-5 text-[14px] shadow-sm flex flex-col justify-between">
+            <p className="opacity-75 flex items-center gap-1.5">
+              <RiTimeLine size={13} />
+              Ledger Balance
+            </p>
+            <div className="flex items-center justify-between">
+              <p className="leading-8 text-[22px] lg:text-[22px] xl:text-[24px] font-semibold">
+                ₦{fmt(business?.ledger_balance)}
+              </p>
+            </div>
+            <p className="text-[11px] text-gray-400">Awaiting settlement</p>
+          </div>
+
+          {/* Today's Collection */}
           <div className="bg-field-background h-21 rounded-lg p-2 xl:p-3 leading-5 text-[14px] shadow-sm flex flex-col justify-between">
             <p className="opacity-75">Today's Collection</p>
             <div className="flex items-center justify-between">
               <p className="leading-8 text-[22px] lg:text-[22px] xl:text-[24px] font-semibold">
-                ₦{summary?.today_collected}
+                ₦{fmt(summary?.today_collected)}
               </p>
               <div className="flex items-center text-green-600 rounded-full px-2 py-0.5 gap-0 bg-green-50 ">
                 <RiArrowUpLongLine size={12} />
@@ -113,35 +137,13 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-          <div className="bg-field-background h-21 rounded-lg p-2 xl:p-3 leading-5 text-[14px] shadow-sm flex flex-col justify-between">
-            <p className="opacity-75">Today's Expenses</p>
-            <div className="flex items-center justify-between">
-              <p className="leading-8 text-[22px] lg:text-[22px] xl:text-[24px] font-semibold">
-                ₦{summary?.today_expenses}
-              </p>
-              <div className="flex items-center text-red-600 rounded-full px-2 py-0.5 gap-0 bg-red-50 ">
-                <RiArrowUpLongLine size={12} />
-                <p className="text-[13px]">3.3%</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-field-background h-21 rounded-lg p-2 xl:p-3 leading-5 text-[14px] shadow-sm flex flex-col justify-between">
-            <p className="opacity-75">Joined Today</p>
-            <div className="flex items-center justify-between">
-              <p className="leading-8 text-[22px] lg:text-[22px] xl:text-[24px] font-semibold">
-                {summary?.new_customers}
-              </p>
-              <div className="flex items-center text-green-600 rounded-full px-2 py-0.5 gap-0 bg-green-50 ">
-                <RiArrowUpLongLine size={12} />
-                <p className="text-[13px]">3.3%</p>
-              </div>
-            </div>
-          </div>
+
+          {/* Total Customers */}
           <div className="bg-field-background h-21 rounded-lg p-2 xl:p-3 leading-5 text-[14px] shadow-sm flex flex-col justify-between">
             <p className="opacity-75">Total Customers</p>
             <div className="flex items-center justify-between">
               <p className="leading-8 text-[22px] lg:text-[22px] xl:text-[24px] font-semibold">
-                {summary?.total_customers}
+                {summary?.total_customers ?? 0}
               </p>
               <div className="flex items-center text-green-600 rounded-full px-2 py-0.5 gap-0 bg-green-50 ">
                 <RiArrowUpLongLine size={12} />
