@@ -49,10 +49,10 @@ export async function saveComplianceInfo(payload: Record<string, unknown>) {
     body: JSON.stringify(payload),
   });
   const json = await res.json();
+  // console.log("compliance/info response:", json); // ← temporary
   if (!res.ok) throw new Error(json.message ?? "Failed to save info");
   return json;
 }
-
 // ── Upload business document — direct to Laravel ────────
 // Bypasses Next.js 413 body size limit
 export async function uploadBusinessDocument(
@@ -111,6 +111,7 @@ export async function addDirector(payload: Record<string, unknown>) {
     body: JSON.stringify(payload),
   });
   const json = await res.json();
+  console.log("directors response:", json); // ← temporary
   if (!res.ok) throw new Error(json.message ?? "Failed to add director");
   return json;
 }

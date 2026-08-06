@@ -463,9 +463,7 @@ export function ComplianceWizard() {
                     disabled={isLocked}
                     className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-gray-400 outline-none text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     placeholder={
-                      businessType === "business_name"
-                        ? "BN-1234567"
-                        : "RC-1234567"
+                      businessType === "business_name" ? "1234567" : "1234567"
                     }
                     value={infoForm.registration_number}
                     onChange={(e) =>

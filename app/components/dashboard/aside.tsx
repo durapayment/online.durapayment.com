@@ -10,6 +10,7 @@ import {
   RiCustomerServiceLine,
   RiFileHistoryLine,
   RiHome6Line,
+  RiLinksLine,
   RiLogoutBoxLine,
   RiNotificationBadgeLine,
   RiRecordCircleLine,
@@ -73,6 +74,11 @@ export const AsideBar = ({ onClose }: { onClose?: () => void }) => {
         title: "Customers",
         icon: <RiShoppingBag3Line size={20} />,
         path: "/dashboard/customers",
+      },
+      {
+        title: "Payment Links",
+        icon: <RiLinksLine size={20} />,
+        path: "/dashboard/payment-links",
       },
     ],
     Integration: [
