@@ -101,12 +101,52 @@ function CreateLinkModal({
 }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"one_time" | "multiple">("multiple");
   const [redirectUrl, setRedirectUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const MAX_IMAGES = 5;
+  const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+
+    setError(null);
+
+    const combined = [...images, ...files];
+    if (combined.length > MAX_IMAGES) {
+      setError(`You can only add up to ${MAX_IMAGES} images.`);
+      return;
+    }
+
+    for (const file of files) {
+      if (!file.type.startsWith("image/")) {
+        setError(`"${file.name}" isn't an image file.`);
+        return;
+      }
+      if (file.size > MAX_SIZE_BYTES) {
+        setError(`"${file.name}" is larger than 2MB.`);
+        return;
+      }
+    }
+
+    setImages(combined);
+    setImagePreviews(combined.map((f) => URL.createObjectURL(f)));
+
+    // reset the input so selecting the same file again still fires onChange
+    e.target.value = "";
+  };
+
+  const removeImage = (index: number) => {
+    const newImages = images.filter((_, i) => i !== index);
+    setImages(newImages);
+    setImagePreviews(newImages.map((f) => URL.createObjectURL(f)));
+  };
 
   const submit = async () => {
     if (!title.trim() || !amount) {
@@ -118,17 +158,19 @@ function CreateLinkModal({
     setError(null);
 
     try {
+      const formData = new FormData();
+      formData.append("title", title.trim());
+      if (description.trim())
+        formData.append("description", description.trim());
+      formData.append("amount", amount);
+      formData.append("type", type);
+      if (redirectUrl.trim())
+        formData.append("redirect_url", redirectUrl.trim());
+      images.forEach((file) => formData.append("images[]", file));
+
       const res = await fetch("/api/payment-links", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: title.trim(),
-          description: description.trim() || null,
-          images: imageUrl.trim() ? [imageUrl.trim()] : [],
-          amount: Number(amount),
-          type,
-          redirect_url: redirectUrl.trim() || null,
-        }),
+        body: formData, // no Content-Type header — browser sets the multipart boundary itself
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.message ?? "Failed to create link");
@@ -190,14 +232,45 @@ function CreateLinkModal({
 
           <div>
             <label className="text-[13px] font-medium text-gray-600 mb-1.5 block">
-              Image URL <span className="text-gray-400">(optional)</span>
+              Images{" "}
+              <span className="text-gray-400">
+                (optional, up to {MAX_IMAGES}, 2MB each)
+              </span>
             </label>
-            <input
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="https://…"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-[14px] outline-none focus:border-gray-400"
-            />
+
+            {imagePreviews.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {imagePreviews.map((src, i) => (
+                  <div key={i} className="relative w-16 h-16 shrink-0">
+                    <img
+                      src={src}
+                      alt=""
+                      className="w-16 h-16 rounded-lg object-cover border border-gray-200"
+                    />
+                    <button
+                      onClick={() => removeImage(i)}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-900 text-white flex items-center justify-center"
+                    >
+                      <RiCloseLine size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {images.length < MAX_IMAGES && (
+              <label className="flex items-center justify-center gap-2 w-full py-3 border border-dashed border-gray-300 rounded-xl text-[13px] text-gray-500 cursor-pointer hover:bg-gray-50 transition-colors">
+                <RiImageLine size={16} />
+                Choose image{images.length > 0 ? "s" : ""}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+              </label>
+            )}
           </div>
 
           <div>
