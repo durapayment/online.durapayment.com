@@ -76,7 +76,7 @@ function CreateLinkModal({
   const [error, setError] = useState<string | null>(null);
 
   const MAX_IMAGES = 5;
-  const MAX_SIZE_BYTES = 3 * 1024 * 1024; // 3MB
+  const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -96,7 +96,7 @@ function CreateLinkModal({
         return;
       }
       if (file.size > MAX_SIZE_BYTES) {
-        setError(`"${file.name}" is larger than 3MB.`);
+        setError(`"${file.name}" is larger than 2MB.`);
         return;
       }
     }
@@ -200,7 +200,7 @@ function CreateLinkModal({
             <label className="text-[13px] font-medium text-gray-600 mb-1.5 block">
               Images{" "}
               <span className="text-gray-400">
-                (optional, up to {MAX_IMAGES}, 3MB each)
+                (optional, up to {MAX_IMAGES}, 2MB each)
               </span>
             </label>
 
