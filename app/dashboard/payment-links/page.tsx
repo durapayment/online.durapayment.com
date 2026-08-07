@@ -67,52 +67,12 @@ function CreateLinkModal({
 }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [images, setImages] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [imageUrl, setImageUrl] = useState("");
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"one_time" | "multiple">("multiple");
   const [redirectUrl, setRedirectUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const MAX_IMAGES = 5;
-  const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
-
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    if (files.length === 0) return;
-
-    setError(null);
-
-    const combined = [...images, ...files];
-    if (combined.length > MAX_IMAGES) {
-      setError(`You can only add up to ${MAX_IMAGES} images.`);
-      return;
-    }
-
-    for (const file of files) {
-      if (!file.type.startsWith("image/")) {
-        setError(`"${file.name}" isn't an image file.`);
-        return;
-      }
-      if (file.size > MAX_SIZE_BYTES) {
-        setError(`"${file.name}" is larger than 2MB.`);
-        return;
-      }
-    }
-
-    setImages(combined);
-    setImagePreviews(combined.map((f) => URL.createObjectURL(f)));
-
-    // reset the input so selecting the same file again still fires onChange
-    e.target.value = "";
-  };
-
-  const removeImage = (index: number) => {
-    const newImages = images.filter((_, i) => i !== index);
-    setImages(newImages);
-    setImagePreviews(newImages.map((f) => URL.createObjectURL(f)));
-  };
 
   const submit = async () => {
     if (!title.trim() || !amount) {
@@ -124,19 +84,17 @@ function CreateLinkModal({
     setError(null);
 
     try {
-      const formData = new FormData();
-      formData.append("title", title.trim());
-      if (description.trim())
-        formData.append("description", description.trim());
-      formData.append("amount", amount);
-      formData.append("type", type);
-      if (redirectUrl.trim())
-        formData.append("redirect_url", redirectUrl.trim());
-      images.forEach((file) => formData.append("images[]", file));
-
       const res = await fetch("/api/payment-links", {
         method: "POST",
-        body: formData, // no Content-Type header — browser sets the multipart boundary itself
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim() || null,
+          images: imageUrl.trim() ? [imageUrl.trim()] : [],
+          amount: Number(amount),
+          type,
+          redirect_url: redirectUrl.trim() || null,
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.message ?? "Failed to create link");
@@ -198,45 +156,14 @@ function CreateLinkModal({
 
           <div>
             <label className="text-[13px] font-medium text-gray-600 mb-1.5 block">
-              Images{" "}
-              <span className="text-gray-400">
-                (optional, up to {MAX_IMAGES}, 2MB each)
-              </span>
+              Image URL <span className="text-gray-400">(optional)</span>
             </label>
-
-            {imagePreviews.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-2">
-                {imagePreviews.map((src, i) => (
-                  <div key={i} className="relative w-16 h-16 shrink-0">
-                    <img
-                      src={src}
-                      alt=""
-                      className="w-16 h-16 rounded-lg object-cover border border-gray-200"
-                    />
-                    <button
-                      onClick={() => removeImage(i)}
-                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-gray-900 text-white flex items-center justify-center"
-                    >
-                      <RiCloseLine size={12} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {images.length < MAX_IMAGES && (
-              <label className="flex items-center justify-center gap-2 w-full py-3 border border-dashed border-gray-300 rounded-xl text-[13px] text-gray-500 cursor-pointer hover:bg-gray-50 transition-colors">
-                <RiImageLine size={16} />
-                Choose image{images.length > 0 ? "s" : ""}
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageSelect}
-                  className="hidden"
-                />
-              </label>
-            )}
+            <input
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="https://…"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-[14px] outline-none focus:border-gray-400"
+            />
           </div>
 
           <div>
@@ -321,6 +248,144 @@ function CreateLinkModal({
 }
 
 // ─────────────────────────────────────────────────────────
+// Link Detail Modal — add this component right after
+// CreateLinkModal, before the main PaymentLinksPage export.
+// ─────────────────────────────────────────────────────────
+function LinkDetailModal({
+  link,
+  onClose,
+}: {
+  link: PaymentLink;
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = () => {
+    navigator.clipboard.writeText(link.url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+          <h2 className="font-semibold text-[16px] text-gray-900">
+            Payment Link
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <RiCloseLine size={20} />
+          </button>
+        </div>
+
+        <div className="px-5 py-5 flex flex-col gap-4">
+          {link.images.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {link.images.map((src, i) => (
+                <img
+                  key={i}
+                  src={src}
+                  alt=""
+                  className="w-20 h-20 rounded-lg object-cover border border-gray-100 shrink-0"
+                />
+              ))}
+            </div>
+          )}
+
+          <div>
+            <p className="text-[18px] font-bold text-gray-900">{link.title}</p>
+            {link.description && (
+              <p className="text-[13px] text-gray-500 mt-1">
+                {link.description}
+              </p>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between py-3 border-y border-gray-50">
+            <span
+              className={clsx(
+                "px-2.5 py-1 rounded-full text-[11px] font-medium",
+                STATUS_STYLES[link.status],
+              )}
+            >
+              {link.status.charAt(0).toUpperCase() + link.status.slice(1)}
+            </span>
+            <p className="text-[20px] font-bold text-gray-900">
+              {fmt(link.amount, link.currency)}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-center justify-between">
+              <p className="text-[13px] text-gray-400">Type</p>
+              <p className="text-[13px] font-medium text-gray-800">
+                {TYPE_LABELS[link.type]}
+              </p>
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-[13px] text-gray-400">Payments received</p>
+              <p className="text-[13px] font-medium text-gray-800">
+                {link.payment_count}
+              </p>
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-[13px] text-gray-400">Slug</p>
+              <p className="text-[13px] font-mono text-gray-800">{link.slug}</p>
+            </div>
+            {link.redirect_url && (
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[13px] text-gray-400 shrink-0">
+                  Redirect URL
+                </p>
+                <p className="text-[13px] text-gray-800 truncate">
+                  {link.redirect_url}
+                </p>
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <p className="text-[13px] text-gray-400">Created</p>
+              <p className="text-[13px] font-medium text-gray-800">
+                {new Date(link.created_at).toLocaleDateString("en-NG", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <p className="text-[12px] font-medium text-gray-500 mb-1.5">
+              Shareable link
+            </p>
+            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5">
+              <p className="text-[13px] text-gray-700 truncate flex-1">
+                {link.url}
+              </p>
+              <button
+                onClick={copy}
+                className="shrink-0 text-[12px] font-semibold text-accent hover:opacity-70 transition-opacity"
+              >
+                {copied ? "Copied!" : "Copy"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
 // Main Page
 // ─────────────────────────────────────────────────────────
 export default function PaymentLinksPage() {
@@ -328,6 +393,7 @@ export default function PaymentLinksPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [selectedLink, setSelectedLink] = useState<PaymentLink | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [actioningId, setActioningId] = useState<string | null>(null);
 
@@ -460,7 +526,8 @@ export default function PaymentLinksPage() {
               {links.map((link) => (
                 <div
                   key={link.id}
-                  className="flex items-center gap-4 px-6 py-4"
+                  onClick={() => setSelectedLink(link)}
+                  className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors cursor-pointer"
                 >
                   <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden">
                     {link.images.length > 0 ? (
@@ -494,7 +561,10 @@ export default function PaymentLinksPage() {
                     {link.status.charAt(0).toUpperCase() + link.status.slice(1)}
                   </span>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div
+                    className="flex items-center gap-1.5 shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <button
                       onClick={() => copyLink(link.id, link.url)}
                       title="Copy link"
@@ -538,6 +608,13 @@ export default function PaymentLinksPage() {
         <CreateLinkModal
           onClose={() => setShowCreate(false)}
           onCreated={fetchLinks}
+        />
+      )}
+
+      {selectedLink && (
+        <LinkDetailModal
+          link={selectedLink}
+          onClose={() => setSelectedLink(null)}
         />
       )}
     </div>
