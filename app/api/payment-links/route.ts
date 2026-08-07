@@ -43,7 +43,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    // ── Read the incoming multipart form and forward it as-is —
+    //    fetch() sends FormData as proper multipart/form-data
+    //    automatically, no manual Content-Type header needed (it sets
+    //    its own boundary, which we must NOT override manually). ───────
+    const incomingForm = await request.formData();
 
     const res = await fetch(
       `${process.env.LARAVEL_API_URL}/api/payment-links`,
@@ -52,9 +56,8 @@ export async function POST(request: NextRequest) {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           Accept: "application/json",
-          "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: incomingForm,
         cache: "no-store",
       },
     );
