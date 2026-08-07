@@ -26,7 +26,7 @@ function buildCSP(nonce: string): string {
       ? `script-src 'self' 'nonce-${nonce}' 'unsafe-eval'`
       : `script-src 'self' 'nonce-${nonce}'`,
     `style-src 'self' 'unsafe-inline'`,
-    "img-src 'self' data: blob: https://img.heroui.chat",
+    "img-src 'self' data: blob: https://img.heroui.chat https://durapayment-documents.s3.eu-north-1.amazonaws.com",
     "font-src 'self' data:",
     connectSrc,
     "frame-src 'none'",
