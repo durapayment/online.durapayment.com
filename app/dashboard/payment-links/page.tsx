@@ -8,7 +8,6 @@ import {
   RiCheckLine,
   RiFileCopyLine,
   RiDeleteBinLine,
-  RiToggleLine,
   RiAlertLine,
   RiImageLine,
 } from "react-icons/ri";
@@ -54,6 +53,41 @@ const TYPE_LABELS: Record<string, string> = {
   one_time: "One-time",
   multiple: "Reusable",
 };
+
+// ─────────────────────────────────────────────────────────
+// Toggle Switch — visually distinct on/off states, not just
+// an icon + tooltip.
+// ─────────────────────────────────────────────────────────
+function ToggleSwitch({
+  active,
+  onClick,
+  disabled,
+}: {
+  active: boolean;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={
+        active ? "Active — click to deactivate" : "Inactive — click to activate"
+      }
+      className={clsx(
+        "relative w-10 h-[22px] rounded-full transition-colors shrink-0 disabled:opacity-40",
+        active ? "bg-green-500" : "bg-gray-300",
+      )}
+    >
+      <span
+        className={clsx(
+          "absolute top-0.5 left-0.5 w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform duration-200",
+          active && "translate-x-[18px]",
+        )}
+      />
+    </button>
+  );
+}
 
 // ─────────────────────────────────────────────────────────
 // Create Link Modal
@@ -577,16 +611,11 @@ export default function PaymentLinksPage() {
                       )}
                     </button>
                     {link.status !== "completed" && (
-                      <button
+                      <ToggleSwitch
+                        active={link.status === "active"}
                         onClick={() => toggleStatus(link)}
                         disabled={actioningId === link.id}
-                        title={
-                          link.status === "active" ? "Deactivate" : "Activate"
-                        }
-                        className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-gray-500 disabled:opacity-40"
-                      >
-                        <RiToggleLine size={14} />
-                      </button>
+                      />
                     )}
                     <button
                       onClick={() => deleteLink(link.id)}
