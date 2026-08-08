@@ -103,7 +103,9 @@ function CreateLinkModal({
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [amountType, setAmountType] = useState<"fixed" | "open">("fixed");
   const [amount, setAmount] = useState("");
+  const [feePayer, setFeePayer] = useState<"merchant" | "customer">("merchant");
   const [type, setType] = useState<"one_time" | "multiple">("multiple");
   const [redirectUrl, setRedirectUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -137,8 +139,6 @@ function CreateLinkModal({
 
     setImages(combined);
     setImagePreviews(combined.map((f) => URL.createObjectURL(f)));
-
-    // reset the input so selecting the same file again still fires onChange
     e.target.value = "";
   };
 
@@ -149,8 +149,12 @@ function CreateLinkModal({
   };
 
   const submit = async () => {
-    if (!title.trim() || !amount) {
-      setError("Title and amount are required.");
+    if (!title.trim()) {
+      setError("Title is required.");
+      return;
+    }
+    if (amountType === "fixed" && !amount) {
+      setError("Amount is required for a fixed-price link.");
       return;
     }
 
@@ -162,7 +166,9 @@ function CreateLinkModal({
       formData.append("title", title.trim());
       if (description.trim())
         formData.append("description", description.trim());
-      formData.append("amount", amount);
+      formData.append("amount_type", amountType);
+      if (amountType === "fixed") formData.append("amount", amount);
+      formData.append("fee_payer", feePayer);
       formData.append("type", type);
       if (redirectUrl.trim())
         formData.append("redirect_url", redirectUrl.trim());
@@ -170,7 +176,7 @@ function CreateLinkModal({
 
       const res = await fetch("/api/payment-links", {
         method: "POST",
-        body: formData, // no Content-Type header — browser sets the multipart boundary itself
+        body: formData,
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.message ?? "Failed to create link");
@@ -273,18 +279,87 @@ function CreateLinkModal({
             )}
           </div>
 
+          {/* ── Amount Type ─────────────────────────────────────── */}
           <div>
             <label className="text-[13px] font-medium text-gray-600 mb-1.5 block">
-              Amount (₦)
+              Amount
             </label>
-            <input
-              type="number"
-              min={100}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="5000"
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-[14px] outline-none focus:border-gray-400"
-            />
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <button
+                onClick={() => setAmountType("fixed")}
+                className={clsx(
+                  "px-3 py-2.5 rounded-xl text-[13px] font-medium border transition-colors",
+                  amountType === "fixed"
+                    ? "bg-accent text-white border-accent"
+                    : "border-gray-200 text-gray-600 hover:bg-gray-50",
+                )}
+              >
+                Fixed amount
+              </button>
+              <button
+                onClick={() => setAmountType("open")}
+                className={clsx(
+                  "px-3 py-2.5 rounded-xl text-[13px] font-medium border transition-colors",
+                  amountType === "open"
+                    ? "bg-accent text-white border-accent"
+                    : "border-gray-200 text-gray-600 hover:bg-gray-50",
+                )}
+              >
+                Customer decides
+              </button>
+            </div>
+
+            {amountType === "fixed" ? (
+              <input
+                type="number"
+                min={100}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="5000"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-[14px] outline-none focus:border-gray-400"
+              />
+            ) : (
+              <p className="text-[12px] text-gray-400 bg-gray-50 px-3 py-2.5 rounded-xl">
+                The customer will be asked to enter their own amount at checkout
+                — any amount, no minimum.
+              </p>
+            )}
+          </div>
+
+          {/* ── Fee Payer ────────────────────────────────────────── */}
+          <div>
+            <label className="text-[13px] font-medium text-gray-600 mb-1.5 block">
+              Who pays the transaction fee?
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setFeePayer("merchant")}
+                className={clsx(
+                  "px-3 py-2.5 rounded-xl text-[13px] font-medium border transition-colors",
+                  feePayer === "merchant"
+                    ? "bg-accent text-white border-accent"
+                    : "border-gray-200 text-gray-600 hover:bg-gray-50",
+                )}
+              >
+                I do
+              </button>
+              <button
+                onClick={() => setFeePayer("customer")}
+                className={clsx(
+                  "px-3 py-2.5 rounded-xl text-[13px] font-medium border transition-colors",
+                  feePayer === "customer"
+                    ? "bg-accent text-white border-accent"
+                    : "border-gray-200 text-gray-600 hover:bg-gray-50",
+                )}
+              >
+                Customer does
+              </button>
+            </div>
+            <p className="text-[12px] text-gray-400 mt-1.5">
+              {feePayer === "merchant"
+                ? "The fee is deducted from what you receive — the customer pays exactly the amount shown."
+                : "The fee is added on top — the customer sees and pays a slightly higher total, and you receive the full amount."}
+            </p>
           </div>
 
           <div>
