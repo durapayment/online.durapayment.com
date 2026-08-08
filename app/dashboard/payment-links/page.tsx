@@ -284,30 +284,16 @@ function CreateLinkModal({
             <label className="text-[13px] font-medium text-gray-600 mb-1.5 block">
               Amount
             </label>
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              <button
-                onClick={() => setAmountType("fixed")}
-                className={clsx(
-                  "px-3 py-2.5 rounded-xl text-[13px] font-medium border transition-colors",
-                  amountType === "fixed"
-                    ? "bg-accent text-white border-accent"
-                    : "border-gray-200 text-gray-600 hover:bg-gray-50",
-                )}
-              >
-                Fixed amount
-              </button>
-              <button
-                onClick={() => setAmountType("open")}
-                className={clsx(
-                  "px-3 py-2.5 rounded-xl text-[13px] font-medium border transition-colors",
-                  amountType === "open"
-                    ? "bg-accent text-white border-accent"
-                    : "border-gray-200 text-gray-600 hover:bg-gray-50",
-                )}
-              >
-                Customer decides
-              </button>
-            </div>
+            <select
+              value={amountType}
+              onChange={(e) =>
+                setAmountType(e.target.value as "fixed" | "open")
+              }
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-[14px] outline-none focus:border-gray-400 bg-white mb-3"
+            >
+              <option value="fixed">Fixed amount</option>
+              <option value="open">Customer decides</option>
+            </select>
 
             {amountType === "fixed" ? (
               <input
@@ -331,30 +317,16 @@ function CreateLinkModal({
             <label className="text-[13px] font-medium text-gray-600 mb-1.5 block">
               Who pays the transaction fee?
             </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setFeePayer("merchant")}
-                className={clsx(
-                  "px-3 py-2.5 rounded-xl text-[13px] font-medium border transition-colors",
-                  feePayer === "merchant"
-                    ? "bg-accent text-white border-accent"
-                    : "border-gray-200 text-gray-600 hover:bg-gray-50",
-                )}
-              >
-                I do
-              </button>
-              <button
-                onClick={() => setFeePayer("customer")}
-                className={clsx(
-                  "px-3 py-2.5 rounded-xl text-[13px] font-medium border transition-colors",
-                  feePayer === "customer"
-                    ? "bg-accent text-white border-accent"
-                    : "border-gray-200 text-gray-600 hover:bg-gray-50",
-                )}
-              >
-                Customer does
-              </button>
-            </div>
+            <select
+              value={feePayer}
+              onChange={(e) =>
+                setFeePayer(e.target.value as "merchant" | "customer")
+              }
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-[14px] outline-none focus:border-gray-400 bg-white"
+            >
+              <option value="merchant">I do</option>
+              <option value="customer">Customer does</option>
+            </select>
             <p className="text-[12px] text-gray-400 mt-1.5">
               {feePayer === "merchant"
                 ? "The fee is deducted from what you receive — the customer pays exactly the amount shown."
@@ -362,34 +334,21 @@ function CreateLinkModal({
             </p>
           </div>
 
+          {/* ── Link Type ────────────────────────────────────────── */}
           <div>
             <label className="text-[13px] font-medium text-gray-600 mb-1.5 block">
               Link Type
             </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setType("multiple")}
-                className={clsx(
-                  "px-3 py-2.5 rounded-xl text-[13px] font-medium border transition-colors",
-                  type === "multiple"
-                    ? "bg-accent text-white border-accent"
-                    : "border-gray-200 text-gray-600 hover:bg-gray-50",
-                )}
-              >
-                Reusable
-              </button>
-              <button
-                onClick={() => setType("one_time")}
-                className={clsx(
-                  "px-3 py-2.5 rounded-xl text-[13px] font-medium border transition-colors",
-                  type === "one_time"
-                    ? "bg-accent text-white border-accent"
-                    : "border-gray-200 text-gray-600 hover:bg-gray-50",
-                )}
-              >
-                One-time
-              </button>
-            </div>
+            <select
+              value={type}
+              onChange={(e) =>
+                setType(e.target.value as "one_time" | "multiple")
+              }
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-[14px] outline-none focus:border-gray-400 bg-white"
+            >
+              <option value="multiple">Reusable</option>
+              <option value="one_time">One-time</option>
+            </select>
             <p className="text-[12px] text-gray-400 mt-1.5">
               {type === "multiple"
                 ? "Stays active — anyone can pay it, any number of times."
