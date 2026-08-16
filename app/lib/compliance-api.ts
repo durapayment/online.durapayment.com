@@ -81,8 +81,19 @@ export async function uploadBusinessDocument(
     xhr.onload = () => {
       try {
         const json = JSON.parse(xhr.responseText);
-        if (xhr.status >= 200 && xhr.status < 300) resolve(json);
-        else reject(new Error(json.message ?? "Upload failed"));
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(json);
+        } else {
+          // ── Prefer the specific field-level error over the generic
+          //    "Validation failed." wrapper, so the user sees the real
+          //    reason (e.g. "file must not be greater than 5120 kilobytes"). ──
+          const errors = json.errors as Record<string, string[]> | undefined;
+          const firstError = errors
+            ? Object.values(errors).flat()[0]
+            : undefined;
+
+          reject(new Error(firstError ?? json.message ?? "Upload failed"));
+        }
       } catch {
         reject(new Error("Invalid response"));
       }
