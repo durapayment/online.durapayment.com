@@ -60,6 +60,17 @@ export async function uploadBusinessDocument(
   file: File,
   onProgress?: (pct: number) => void,
 ) {
+  // ── Check size BEFORE sending — a PHP-level rejection (over
+  //    upload_max_filesize) never produces a real JSON response at
+  //    all, so catching it here is the only reliable way to always
+  //    show a clear, specific message. ─────────────────────────────
+  const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
+  if (file.size > MAX_SIZE_BYTES) {
+    return Promise.reject(
+      new Error("File size must not exceed 2MB. Please choose a smaller file."),
+    );
+  }
+
   const token = await getAccessToken();
 
   return new Promise<{ data: unknown; message: string }>((resolve, reject) => {
@@ -84,14 +95,10 @@ export async function uploadBusinessDocument(
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve(json);
         } else {
-          // ── Prefer the specific field-level error over the generic
-          //    "Validation failed." wrapper, so the user sees the real
-          //    reason (e.g. "file must not be greater than 5120 kilobytes"). ──
           const errors = json.errors as Record<string, string[]> | undefined;
           const firstError = errors
             ? Object.values(errors).flat()[0]
             : undefined;
-
           reject(new Error(firstError ?? json.message ?? "Upload failed"));
         }
       } catch {

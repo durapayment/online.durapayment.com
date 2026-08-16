@@ -768,7 +768,7 @@ export function ComplianceWizard() {
         <div className="space-y-3">
           <p className="text-sm text-gray-500 mb-4">
             Upload the required documents below. You can save progress and
-            return later. Accepted: PDF, JPEG, PNG · Max 5MB.
+            return later. Accepted: PDF, JPEG, PNG · Max 2MB.
           </p>
 
           {/* Required first */}
