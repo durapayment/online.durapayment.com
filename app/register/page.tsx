@@ -213,9 +213,9 @@ function Step2({ accountType, step1Data, onBack }: Step2Props) {
 
       if (!response.ok) {
         if (result.errors) {
-          // ── Structured Laravel validation errors — map to the
-          //    specific field they actually belong to. ───────────
           const apiErrors: Partial<Step2Errors> = {};
+          const unmatchedMessages: string[] = [];
+
           for (const key in result.errors) {
             if (key === "first_name")
               apiErrors.firstName = result.errors[key][0];
@@ -225,12 +225,18 @@ function Step2({ accountType, step1Data, onBack }: Step2Props) {
               apiErrors.phone = result.errors[key][0];
             else if (key === "password")
               apiErrors.password = result.errors[key][0];
+            else unmatchedMessages.push(result.errors[key][0]); // ← catch email, etc.
           }
+
           setErrors((prev) => ({ ...prev, ...apiErrors }));
+
+          // ── Any error for a field this component doesn't have its own
+          //    input for (e.g. email, which lives on Step 1) — show it as
+          //    a general banner instead of silently dropping it. ────────
+          if (unmatchedMessages.length > 0) {
+            setGeneralError(unmatchedMessages.join(" "));
+          }
         } else {
-          // ── Not a field-level validation error (e.g. a raw server
-          //    error) — show it generically instead of guessing
-          //    which input to blame. ───────────────────────────────
           setGeneralError(
             result.message || "Registration failed. Please try again.",
           );
